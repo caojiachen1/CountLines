@@ -1,0 +1,47 @@
+# Build directories
+build/
+bin/
+debug/
+release/
+
+# IDE files
+.vs/
+.vscode/
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Object files
+*.o
+*.obj
+*.ko
+*.elf
+
+# Executables
+*.exe
+*.out
+*.app
+countlines
+countlines.exe
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Temporary files
+*~
+*.swp
+*.tmp
