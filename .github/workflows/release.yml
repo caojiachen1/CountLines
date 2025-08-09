@@ -34,16 +34,25 @@ jobs:
         else
           # Extract version number and increment minor version
           version_num=$(echo $latest_tag | sed 's/^v//')
-          major=$(echo $version_num | cut -d. -f1)
-          minor=$(echo $version_num | cut -d. -f2)
           
-          # Increment minor version
-          new_minor=$((minor + 1))
-          new_version="${major}.${new_minor}"
-          new_tag="v${new_version}"
-          
-          echo "Latest tag: $latest_tag"
-          echo "New tag: $new_tag"
+          # Validate format (should be major.minor)
+          if ! echo "$version_num" | grep -qE '^[0-9]+\.[0-9]+$'; then
+            echo "Warning: Latest tag '$latest_tag' doesn't match expected format v<major>.<minor>"
+            echo "Starting fresh with v1.0"
+            new_version="1.0"
+            new_tag="v1.0"
+          else
+            major=$(echo $version_num | cut -d. -f1)
+            minor=$(echo $version_num | cut -d. -f2)
+            
+            # Increment minor version
+            new_minor=$((minor + 1))
+            new_version="${major}.${new_minor}"
+            new_tag="v${new_version}"
+            
+            echo "Latest tag: $latest_tag"
+            echo "New tag: $new_tag"
+          fi
         fi
         
         # Only create release on main/master branch push (not PR)
@@ -109,10 +118,29 @@ jobs:
       shell: bash
       run: |
         cd build
+        echo "Looking for executable in build directory..."
+        find . -name "${{ matrix.executable_name }}" -type f
+        
+        # Test executable exists and runs
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          ./bin/Release/${{ matrix.executable_name }} --version || ./bin/${{ matrix.executable_name }} --version
+          if [ -f "./bin/Release/${{ matrix.executable_name }}" ]; then
+            echo "Testing Release build executable..."
+            ./bin/Release/${{ matrix.executable_name }} --version
+          elif [ -f "./bin/${{ matrix.executable_name }}" ]; then
+            echo "Testing bin executable..."
+            ./bin/${{ matrix.executable_name }} --version
+          else
+            echo "Error: Could not find executable ${{ matrix.executable_name }}"
+            exit 1
+          fi
         else
-          ./bin/${{ matrix.executable_name }} --version
+          if [ -f "./bin/${{ matrix.executable_name }}" ]; then
+            echo "Testing executable..."
+            ./bin/${{ matrix.executable_name }} --version
+          else
+            echo "Error: Could not find executable ${{ matrix.executable_name }}"
+            exit 1
+          fi
         fi
 
     - name: Package artifact
