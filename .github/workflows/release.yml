@@ -1,0 +1,188 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  # Determine next version tag
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+      should_release: ${{ steps.version.outputs.should_release }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Determine version
+      id: version
+      run: |
+        # Get the latest tag, if any
+        latest_tag=$(git tag -l "v*" --sort=-version:refname | head -n 1)
+        
+        if [ -z "$latest_tag" ]; then
+          # No tags exist, start with v1.0
+          new_version="1.0"
+          new_tag="v1.0"
+          echo "No previous tags found, starting with v1.0"
+        else
+          # Extract version number and increment minor version
+          version_num=$(echo $latest_tag | sed 's/^v//')
+          major=$(echo $version_num | cut -d. -f1)
+          minor=$(echo $version_num | cut -d. -f2)
+          
+          # Increment minor version
+          new_minor=$((minor + 1))
+          new_version="${major}.${new_minor}"
+          new_tag="v${new_version}"
+          
+          echo "Latest tag: $latest_tag"
+          echo "New tag: $new_tag"
+        fi
+        
+        # Only create release on main/master branch push (not PR)
+        should_release="false"
+        if [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" -o "${{ github.ref }}" = "refs/heads/master" ]; then
+          should_release="true"
+        fi
+        
+        echo "tag=${new_tag}" >> $GITHUB_OUTPUT
+        echo "version=${new_version}" >> $GITHUB_OUTPUT
+        echo "should_release=${should_release}" >> $GITHUB_OUTPUT
+        
+        echo "Version: ${new_version}"
+        echo "Tag: ${new_tag}"
+        echo "Should release: ${should_release}"
+
+  # Build on multiple platforms
+  build:
+    needs: version
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            name: linux
+            cmake_generator: "Unix Makefiles"
+            artifact_name: countlines-linux
+            executable_name: countlines
+          - os: windows-latest
+            name: windows
+            cmake_generator: "Visual Studio 17 2022"
+            artifact_name: countlines-windows
+            executable_name: countlines.exe
+          - os: macos-latest
+            name: macos
+            cmake_generator: "Unix Makefiles"
+            artifact_name: countlines-macos
+            executable_name: countlines
+
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup CMake
+      uses: jwlawson/actions-setup-cmake@v1.14
+      with:
+        cmake-version: '3.16.x'
+
+    - name: Create build directory
+      run: mkdir build
+
+    - name: Configure CMake
+      run: |
+        cd build
+        cmake .. -G "${{ matrix.cmake_generator }}" -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      run: |
+        cd build
+        cmake --build . --config Release
+
+    - name: Test executable
+      shell: bash
+      run: |
+        cd build
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          ./bin/Release/${{ matrix.executable_name }} --version || ./bin/${{ matrix.executable_name }} --version
+        else
+          ./bin/${{ matrix.executable_name }} --version
+        fi
+
+    - name: Package artifact
+      shell: bash
+      run: |
+        cd build
+        mkdir -p ../artifacts
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          # Windows builds may put executable in Release subdirectory
+          if [ -f "./bin/Release/${{ matrix.executable_name }}" ]; then
+            cp "./bin/Release/${{ matrix.executable_name }}" "../artifacts/${{ matrix.artifact_name }}.exe"
+          else
+            cp "./bin/${{ matrix.executable_name }}" "../artifacts/${{ matrix.artifact_name }}.exe"
+          fi
+        else
+          cp "./bin/${{ matrix.executable_name }}" "../artifacts/${{ matrix.artifact_name }}"
+        fi
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: artifacts/${{ matrix.artifact_name }}*
+
+  # Create release (only on main branch push)
+  release:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    if: needs.version.outputs.should_release == 'true'
+    
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: release-artifacts
+
+    - name: Display structure of downloaded files
+      run: ls -la release-artifacts/
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ needs.version.outputs.tag }}
+        name: Release ${{ needs.version.outputs.tag }}
+        body: |
+          ## CountLines ${{ needs.version.outputs.tag }}
+          
+          High-performance CLI tool for counting lines of code in project directories.
+          
+          ### Changes
+          - Automatic build and release for version ${{ needs.version.outputs.tag }}
+          
+          ### Downloads
+          - **Linux**: countlines-linux
+          - **Windows**: countlines-windows.exe  
+          - **macOS**: countlines-macos
+          
+          ### Usage
+          ```bash
+          ./countlines [OPTIONS] <directory>
+          ```
+          
+          See the [README](https://github.com/caojiachen1/CountLines/blob/main/README.md) for detailed usage instructions.
+        draft: false
+        prerelease: false
+        files: |
+          release-artifacts/countlines-linux/countlines-linux
+          release-artifacts/countlines-windows/countlines-windows.exe
+          release-artifacts/countlines-macos/countlines-macos
