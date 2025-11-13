@@ -242,15 +242,19 @@ void count_lines_in_directory(const char *dirpath, const ExcludeList *exclude_li
 // Print usage information
 void print_usage(const char *program_name) {
     printf("Usage: %s [OPTIONS] <directory>\n", program_name);
+    printf("   or: %s --web [PORT]\n", program_name);
     printf("\nA high-performance CLI tool for counting lines of code in projects.\n");
     printf("\nOptions:\n");
     printf("  -e, --exclude DIR     Exclude directory or pattern (can be used multiple times)\n");
     printf("  -h, --help           Show this help message\n");
     printf("  -v, --version        Show version information\n");
+    printf("  -w, --web [PORT]     Start web server mode (default port: 8080)\n");
     printf("\nExamples:\n");
     printf("  %s /path/to/project\n", program_name);
     printf("  %s -e node_modules -e .git /path/to/project\n", program_name);
     printf("  %s --exclude=build --exclude=dist /path/to/project\n", program_name);
+    printf("  %s --web              # Start web server on port 8080\n", program_name);
+    printf("  %s --web 3000         # Start web server on port 3000\n", program_name);
     printf("\nSupported file types:\n");
     printf("  C/C++, Java, JavaScript, TypeScript, Python, Ruby, PHP, Go, Rust,\n");
     printf("  C#, Visual Basic, F#, Swift, Kotlin, Scala, HTML, CSS, JSON, YAML,\n");

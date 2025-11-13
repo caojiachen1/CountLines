@@ -19,7 +19,7 @@ endif()
 # Platform-specific libraries
 if(WIN32)
     # Windows specific libraries
-    set(PLATFORM_LIBS "")
+    set(PLATFORM_LIBS ws2_32)
 elseif(UNIX)
     # Unix/Linux specific libraries
     set(PLATFORM_LIBS "")
@@ -29,11 +29,13 @@ endif()
 set(SOURCES
     src/main.c
     src/countlines.c
+    src/webserver.c
 )
 
 # Header files
 set(HEADERS
     src/countlines.h
+    src/webserver.h
 )
 
 # Create executable
