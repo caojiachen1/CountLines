@@ -1,11 +1,12 @@
 # CountLines
 
-A high-performance CLI tool for counting lines of code in project directories, written in C with cross-platform CMake support.
+A high-performance CLI tool for counting lines of code in project directories, written in C with cross-platform CMake support. Now with a beautiful web visualization interface!
 
 ## Features
 
 - **Fast Performance**: Optimized C implementation for rapid file processing
 - **Cross-Platform**: Uses CMake for seamless builds on Windows, Linux, and macOS
+- **Web Interface**: Modern, responsive web UI for visualizing code statistics
 - **Smart File Detection**: Automatically detects text-based source files
 - **Folder Exclusion**: Powerful pattern-based exclusion system
 - **Detailed Analysis**: Breaks down lines into code, comments, and blank lines
@@ -22,7 +23,7 @@ C/C++, Java, JavaScript, TypeScript, Python, Ruby, PHP, Go, Rust, C#, Visual Bas
 - CMake 3.10 or higher
 - A C99-compatible compiler (GCC, Clang, MSVC)
 
-### Build Instructions
+### Build Instructions (Linux/macOS)
 
 ```bash
 # Clone the repository
@@ -40,7 +41,18 @@ make
 # The executable will be in build/bin/countlines
 ```
 
-### Windows (Visual Studio)
+### Windows (Using BAT Script)
+
+For Windows users, a convenient batch script is provided:
+
+```cmd
+REM Simply run the build script
+build.bat
+
+REM The executable will be in build\bin\countlines.exe or build\bin\Release\countlines.exe
+```
+
+### Windows (Manual Build)
 
 ```cmd
 mkdir build
@@ -50,6 +62,25 @@ cmake --build . --config Release
 ```
 
 ## Usage
+
+### Web Interface Mode
+
+Start the web server to use the visual interface:
+
+```bash
+# Start web server on default port (8080)
+./countlines --web
+
+# Start web server on custom port
+./countlines --web 3000
+```
+
+Then open your browser to `http://localhost:8080` (or your custom port) to access the web interface.
+
+![Web Interface](https://github.com/user-attachments/assets/1c09c487-5554-4174-a0e8-b7899917998c)
+![Results Display](https://github.com/user-attachments/assets/d08e883f-d933-4b92-97a3-b4bf02a9b684)
+
+### Command Line Mode
 
 ### Basic Usage
 
@@ -87,8 +118,9 @@ The tool automatically excludes common directories:
 - `-e, --exclude DIR`: Exclude directory or pattern (can be used multiple times)
 - `-h, --help`: Show help message
 - `-v, --version`: Show version information
+- `-w, --web [PORT]`: Start web server mode (default port: 8080)
 
-## Example Output
+## Example Output (CLI Mode)
 
 ```
 Counting lines in: /path/to/project
@@ -110,6 +142,17 @@ Blank:    13.2%
 
 Processing completed in 0.045 seconds
 ```
+
+## Web Interface Features
+
+The web interface provides:
+
+- **Visual Dashboard**: Beautiful cards showing key statistics
+- **Interactive Charts**: Bar charts displaying code breakdown
+- **Real-time Processing**: Instant results via AJAX API calls
+- **Responsive Design**: Works on desktop, tablet, and mobile devices
+- **Customizable Paths**: Analyze any directory accessible to the server
+- **Exclude Patterns**: Support for excluding directories via the UI
 
 ## Performance Features
 

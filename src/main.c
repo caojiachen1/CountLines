@@ -1,4 +1,5 @@
 #include "countlines.h"
+#include "webserver.h"
 #include <time.h>
 
 #define VERSION "1.0.0"
@@ -7,6 +8,21 @@ int main(int argc, char *argv[]) {
     if (argc < 2) {
         print_usage(argv[0]);
         return 1;
+    }
+    
+    // Check for web server mode
+    if (argc == 2 && (strcmp(argv[1], "--web") == 0 || strcmp(argv[1], "-w") == 0)) {
+        return start_web_server(WEB_PORT);
+    }
+    
+    // Check for web server with custom port
+    if (argc == 3 && (strcmp(argv[1], "--web") == 0 || strcmp(argv[1], "-w") == 0)) {
+        int port = atoi(argv[2]);
+        if (port <= 0 || port > 65535) {
+            fprintf(stderr, "Error: Invalid port number '%s'\n", argv[2]);
+            return 1;
+        }
+        return start_web_server(port);
     }
     
     ExcludeList *exclude_list = create_exclude_list();
